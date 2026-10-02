@@ -3,6 +3,7 @@
 
 #include "Game/ABGameMode.h"
 //#include <Player/ABPlayerController.h>
+#include <Character/ABCharacterPlayer.h>
 
 AABGameMode::AABGameMode()
 {
@@ -17,6 +18,8 @@ AABGameMode::AABGameMode()
 		DefaultPawnClass = ThirdPersonClassRef.Class;
 	}	//==================================================================================*/
 
+	DefaultPawnClass = AABCharacterPlayer::StaticClass();
+
 	// 플레이어 컨트롤러 클래스 설정
 	//PlayerControllerClass = AABPlayerController::StaticClass();
 	static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerClassRef(TEXT("/Script/Unreal03_ArenaBattle.ABPlayerController"));
@@ -25,5 +28,4 @@ AABGameMode::AABGameMode()
 	{
 		PlayerControllerClass = PlayerControllerClassRef.Class;
 	}
-
 }
