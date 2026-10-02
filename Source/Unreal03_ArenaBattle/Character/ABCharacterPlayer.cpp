@@ -56,7 +56,7 @@ AABCharacterPlayer::AABCharacterPlayer()
 	}
 
 	// 애님 블루프린트 검색 및 설정
-	static ConstructorHelpers::FClassFinder<UAnimInstance> CharacterAnim(TEXT(""));
+	static ConstructorHelpers::FClassFinder<UAnimInstance> CharacterAnim(TEXT("/Game/ArenaBattle/Animation/ABP_ABCharacter.ABP_ABCharacter_C"));
 
 	// 검색에 성공하면 클래스 정보 설정
 	if (CharacterAnim.Succeeded())
