@@ -5,6 +5,9 @@
 #include "ABCharacterControlData.h"
 #include "ABComboActionData.h"
 #include <GameFramework/CharacterMovementComponent.h>
+#include <Components/CapsuleComponent.h>
+#include <Physics/ABCollision.h>
+#include <Engine/DamageEvents.h>
 
 // Sets default values
 AABCharacterBase::AABCharacterBase()
@@ -28,6 +31,65 @@ AABCharacterBase::AABCharacterBase()
 		CharacterControlManager.Add(ECharacterControlType::Quater, QuaterDataRef.Object);
 	}
 
+	// 콜리전 설정
+	GetCapsuleComponent()->SetCollisionProfileName(CPROFILE_ABCAPSULE);
+	GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
+
+	// 몽타주 및 콤보 액션 데이터 애셋 지정
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ComboActionMontageRef(TEXT("/Game/ArenaBattle/Animation/AM_ComboAttack.AM_ComboAttack"));
+	if (ComboActionMontageRef.Succeeded())
+	{
+		ComboAttackMontage = ComboActionMontageRef.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UABComboActionData> ComboActionDataRef(TEXT("/Game/ArenaBattle/ComboData/ABA_ComboAction.ABA_ComboAction"));
+	if (ComboActionDataRef.Succeeded())
+	{
+		ComboActionData = ComboActionDataRef.Object;
+	}
+
+	// 죽음 몽타주 애셋 바인딩
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> DeadMontageRef(TEXT("/Game/ArenaBattle/Animation/AM_Dead.AM_Dead"));
+	if (DeadMontageRef.Succeeded())
+	{
+		DeadMontage = DeadMontageRef.Object;
+	}
+}
+
+float AABCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	// 데미지를 받으면 죽음 처리 함수 호출
+	SetDead();
+
+	return DamageAmount;
+}
+
+void AABCharacterBase::SetDead()
+{
+	// 움직이지 않도록 처리
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	// 죽는 모션 재생
+	PlayDeadAnimation();
+
+	// 콜리전 끄기
+	SetActorEnableCollision(false);
+}
+
+void AABCharacterBase::PlayDeadAnimation()
+{
+	// 애님 인스턴스를 통해서 죽음 몽타주 재생
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		// 현재 재생중인 모든 몽타주 중지
+		AnimInstance->StopAllMontages(0.0f);
+
+		// 재생
+		AnimInstance->Montage_Play(DeadMontage, 1.0f);
+	}
 }
 
 void AABCharacterBase::SetCharacterControlData(const UABCharacterControlData* InCharacterControlData)
@@ -166,4 +228,61 @@ void AABCharacterBase::ComboCheck()
 			bHasNextComboCommand = false;
 		}
 	}
+}
+
+void AABCharacterBase::AttackHitCheck()
+{
+	// 트레이스를 활용한 충돌 확인
+	// 콜리전 쿼리 파라미터
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+
+	// 공격 범위
+	const float AttackRange = 120.0f;
+
+	// 트레이스에 사용할 구체의 반지름
+	const float AttackRadius = 30.0f;
+
+	// 트레이스 시작 위치 -> 액터의 위치 + 캡슐 높이의 반지름 만큼 앞으로 떨어진 위치
+	FVector Start = GetActorLocation() + GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
+
+	// 트레이스 종료 위치 -> 시작 위치 + 공격 범위 만큼 앞으로 떨어진 위치
+	FVector End = Start + GetActorForwardVector() * AttackRange;
+	FHitResult OutHitResult;
+	bool HitDetected = GetWorld()->SweepSingleByChannel(
+		OutHitResult,			// 충돌 여부
+		Start,					// 충돌 시작 지점
+		End,					// 충돌 종료 지점
+		FQuat::Identity,
+		CCHANNEL_ABACTION,
+		FCollisionShape::MakeSphere(AttackRadius),
+		Params
+	);
+
+	// 충돌이 감지되면 데미지 전달
+	if (HitDetected)
+	{
+		// 전달할 데미지
+		const float AttackDamage = 30.0f;
+
+		// 데미지 이벤트 변수
+		FDamageEvent DamageEvent;
+
+		// TakeDamage 함수를 호출해서 데미지 전달
+		OutHitResult.GetActor()->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+	}
+
+	// 시각적으로 충돌여부를 확인할 수 잇도록 디버깅 기능 활용
+#if ENABLE_DRAW_DEBUG
+	// 캡슐의 중심 위치 (End - Start): Start위치에서 End위치로 향하는 벡터
+	FVector CapsulOrigin = Start + (End - Start) * 0.5f;
+
+	// 캡슐 높이의 절반
+	float CapsuleHalfHeight = AttackRange * 0.5f;
+
+	// 표시할 색상 (맞았으면 빨간색, 안 맞았으면 녹색)
+	FColor DrawColor = HitDetected ? FColor::Red : FColor::Green;
+
+	// 캡슐그리기
+	DrawDebugCapsule(GetWorld(), CapsulOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
+#endif
 }

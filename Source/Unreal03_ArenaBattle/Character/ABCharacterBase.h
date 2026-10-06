@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include <Interface/ABAnimationAttackInterface.h>
 #include "ABCharacterBase.generated.h"
 
 // 입력 컨트롤을 관리하기 위한 열거형
@@ -15,13 +16,24 @@ enum class ECharacterControlType : uint8
 };
 
 UCLASS()
-class UNREAL03_ARENABATTLE_API AABCharacterBase : public ACharacter
+class UNREAL03_ARENABATTLE_API AABCharacterBase : public ACharacter, public IABAnimationAttackInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
 	AABCharacterBase();
+
+protected:
+	// 액터가 데미지를 받았을때 호출되는 함수 (Actor 에서 파생됨)
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+protected:		// Dead 처리
+	// 죽음 설정 함수
+	virtual void SetDead();
+
+	// 죽는 애니메이션 재생 함수
+	void PlayDeadAnimation();
 
 protected:
 	// 컨트롤 데이터 설정
@@ -67,4 +79,14 @@ protected:
 	// 콤보 점프(섹션 점프) 판정할 때 사용할 플래그
 	UPROPERTY(VisibleAnywhere, Category = "Attack")
 	bool bHasNextComboCommand = false;
+
+	// 죽음 애니메이션 몽타주 애셋
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stat")
+	TObjectPtr<class UAnimMontage> DeadMontage;
+
+	// 죽은 뒤에 약간의 시간을 대기(딜레이)한 후 삭제
+	float DeadEventDelayTime = 5.0f;
+
+	// 공격 감지(판정) 함수
+	virtual void AttackHitCheck() override;
 };
