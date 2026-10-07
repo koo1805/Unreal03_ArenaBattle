@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include <Interface/ABAnimationAttackInterface.h>
+#include <Interface/ABCharacterWidgetInterface.h>
 #include "ABCharacterBase.generated.h"
 
 // 입력 컨트롤을 관리하기 위한 열거형
@@ -16,7 +17,7 @@ enum class ECharacterControlType : uint8
 };
 
 UCLASS()
-class UNREAL03_ARENABATTLE_API AABCharacterBase : public ACharacter, public IABAnimationAttackInterface
+class UNREAL03_ARENABATTLE_API AABCharacterBase : public ACharacter, public IABAnimationAttackInterface, public IABCharacterWidgetInterface
 {
 	GENERATED_BODY()
 
@@ -25,6 +26,9 @@ public:
 	AABCharacterBase();
 
 protected:
+	// 컴포넌트 초기화가 끝났을때 호출되는 함수 -> 즉, 액터의 초기화가 끝난 시점
+	virtual void PostInitializeComponents() override;
+
 	// 액터가 데미지를 받았을때 호출되는 함수 (Actor 에서 파생됨)
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -38,6 +42,9 @@ protected:		// Dead 처리
 protected:
 	// 컨트롤 데이터 설정
 	virtual void SetCharacterControlData(const class UABCharacterControlData* InCharacterControlData);
+
+	// 위젯을 설정할 때 사용하는 함수
+	virtual void SetupCharacterWidget(class UABUserWidget* InUserWidget) override;
 
 	// 콤보 공격 처리 함수
 	// 공격을 처음 시작할 때와 콤보액션을 진행할 때 실행
