@@ -89,4 +89,13 @@ protected:
 
 	// 공격 감지(판정) 함수
 	virtual void AttackHitCheck() override;
+
+protected:
+	// 스텟 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UABCharacterStatComponent> Stat;
+
+	// 위젯 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widget, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UABWidgetComponent> HpBar;
 };
