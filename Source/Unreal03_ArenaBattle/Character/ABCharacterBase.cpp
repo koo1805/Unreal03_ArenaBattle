@@ -4,14 +4,20 @@
 #include "Character/ABCharacterBase.h"
 #include "ABCharacterControlData.h"
 #include "ABComboActionData.h"
-#include <GameFramework/CharacterMovementComponent.h>
-#include <Components/CapsuleComponent.h>
-#include <Physics/ABCollision.h>
-#include <Engine/DamageEvents.h>
-
 #include <CharacterStat/ABCharacterStatComponent.h>
 #include <UI/ABWidgetComponent.h>
 #include <UI/ABHpBarWidget.h>
+#include <Physics/ABCollision.h>
+#include <Item/ABItemData.h>
+#include <Item/ABWeaponItemData.h>
+
+#include <GameFramework/CharacterMovementComponent.h>
+#include <Components/CapsuleComponent.h>
+#include <Engine/DamageEvents.h>
+#include <Components/SkeletalMeshComponent.h>
+
+// 커스텀 로그 카테고리 정의
+DEFINE_LOG_CATEGORY(LogABCharacter)
 
 // Sets default values
 AABCharacterBase::AABCharacterBase()
@@ -90,6 +96,15 @@ AABCharacterBase::AABCharacterBase()
 		// 콜리전 끄기
 		HpBar->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+
+	// 아이템 종류별로 실행할 처리 로직(함수)을 델리게이트 배열에 추가
+	TakeItemActions.Add(FOnTakeItemDelegate::CreateUObject(this, &AABCharacterBase::EquipWeapon));
+	TakeItemActions.Add(FOnTakeItemDelegate::CreateUObject(this, &AABCharacterBase::DrinkPotion));
+	TakeItemActions.Add(FOnTakeItemDelegate::CreateUObject(this, &AABCharacterBase::ReadScroll));
+
+	// 스켈레탈 메시 컴포넌트 생성
+	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon"));
+	Weapon->SetupAttachment(GetMesh(), TEXT("WeaponSocket"));
 }
 
 void AABCharacterBase::PostInitializeComponents()
@@ -112,6 +127,50 @@ float AABCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	Stat->ApplayDamage(DamageAmount);
 
 	return DamageAmount;
+}
+
+void AABCharacterBase::TakeItem(UABItemData* InItemData)
+{
+	// 아이템 유효성 확인
+	if (InItemData)
+	{
+		// 아이템 인덱스
+		uint8 ItemIndex = (uint8)InItemData->Type;
+
+		// 델리게이트를 통해서 함수 호출
+		TakeItemActions[ItemIndex].ExecuteIfBound(InItemData);
+	}
+}
+
+void AABCharacterBase::DrinkPotion(UABItemData* InItemData)
+{
+	// 로그 출력
+	UE_LOG(LogABCharacter, Log, TEXT("Drink Potion"));
+}
+
+void AABCharacterBase::EquipWeapon(UABItemData* InItemData)
+{
+	//UE_LOG(LogABCharacter, Log, TEXT("Equip Weapon"));
+
+	// 수집한 아이템으로부터 무기 스켈레탈 메시 애셋을 불러와 설정
+	UABWeaponItemData* WeaponItemData = Cast<UABWeaponItemData>(InItemData);
+	if (WeaponItemData)
+	{
+		// 무기 메시가 로딩되기 전이라면 애셋 로드
+		if (WeaponItemData->WeaponMesh.IsPending())
+		{
+			// 확실하게 로드하기 위해 동기 방식으로 로드
+			WeaponItemData->WeaponMesh.LoadSynchronous();
+		}
+
+		//Weapon->SetSkeletalMesh(WeaponItemData->WeaponMesh);
+		Weapon->SetSkeletalMesh(WeaponItemData->WeaponMesh.Get());
+	}
+}
+
+void AABCharacterBase::ReadScroll(UABItemData* InItemData)
+{
+	UE_LOG(LogABCharacter, Log, TEXT("Read Scroll"));
 }
 
 void AABCharacterBase::SetDead()
@@ -302,7 +361,7 @@ void AABCharacterBase::AttackHitCheck()
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
 
 	// 공격 범위
-	const float AttackRange = 120.0f;
+	const float AttackRange = 210.0f;
 
 	// 트레이스에 사용할 구체의 반지름
 	const float AttackRadius = 30.0f;
