@@ -15,6 +15,8 @@ class UNREAL03_ARENABATTLE_API UABWeaponItemData : public UABItemData
 	GENERATED_BODY()
 	
 public:
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override { return FPrimaryAssetId("ABItemData", GetFName()); }
+
 	// 제공할 무기에 대한 스켈레탈 메시 애셋 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	//TObjectPtr<USkeletalMesh> WeaponMesh;
