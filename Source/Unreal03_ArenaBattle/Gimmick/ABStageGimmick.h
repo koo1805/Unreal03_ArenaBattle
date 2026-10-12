@@ -28,6 +28,10 @@ public:
 	// Sets default values for this actor's properties
 	AABStageGimmick();
 
+public:
+	FORCEINLINE int32 GetStageNum() const { return CurrentStageNum; }
+	FORCEINLINE void SetStageNum(int32 NewStageNum) { CurrentStageNum = NewStageNum; }
+
 protected:
 	// 액터의 상태가 변경될 때 엔진에서 호출해주는 함수
 	virtual void OnConstruction(const FTransform& Transform) override;
@@ -139,4 +143,8 @@ protected:		// 보상 관련 섹션
 
 	// 아이템 상자 생성 함수
 	void SpawnRewardBoxes();
+
+protected:		// 스테이지 섹션
+	UPROPERTY(VisibleInstanceOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentStageNum;
 };

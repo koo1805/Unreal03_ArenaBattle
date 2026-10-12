@@ -32,6 +32,11 @@ public:
 	// Sets default values for this character's properties
 	AABCharacterBase();
 
+public:		// 스탯
+	int32 GetLevel() const;
+
+	void SetLevel(int32 InNewLevel);
+
 protected:
 	// 컴포넌트 초기화가 끝났을때 호출되는 함수 -> 즉, 액터의 초기화가 끝난 시점
 	virtual void PostInitializeComponents() override;

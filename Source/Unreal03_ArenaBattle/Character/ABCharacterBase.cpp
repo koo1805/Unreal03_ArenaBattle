@@ -165,6 +165,9 @@ void AABCharacterBase::EquipWeapon(UABItemData* InItemData)
 
 		//Weapon->SetSkeletalMesh(WeaponItemData->WeaponMesh);
 		Weapon->SetSkeletalMesh(WeaponItemData->WeaponMesh.Get());
+
+		// 무기 아이템이 제공하는 부가 스탯 적용
+		Stat->SetModifierStat(WeaponItemData->ModifierStat);
 	}
 }
 
@@ -219,7 +222,8 @@ void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
 	if (HpBarWidget)
 	{
 		// 데이터 설정
-		HpBarWidget->SetMaxHp(Stat->GetMaxHp());
+		//HpBarWidget->SetMaxHp(Stat->GetMaxHp());
+		HpBarWidget->SetMaxHp(Stat->GetTotalStat().MaxHp);
 		HpBarWidget->UpdateHpBar(Stat->GetCurrentHp());
 
 		// 델리게이트 등록
@@ -305,7 +309,8 @@ void AABCharacterBase::SetComboCheckTimer()
 	ensureAlways(ComboActionData->EffectiveFrameCount.IsValidIndex(ComboIndex));
 
 	// 애니메이션 재생 속도
-	const float AttackSpeedRate = 1.0f;
+	//const float AttackSpeedRate = 1.0f;
+	const float AttackSpeedRate = Stat->GetTotalStat().AttackSpeed;
 
 	// 콤보 공격 입력 시간 (초단위) 계산
 	float ComboEffectTime = (ComboActionData->EffectiveFrameCount[ComboIndex] / ComboActionData->FrameRate / AttackSpeedRate);
@@ -361,7 +366,8 @@ void AABCharacterBase::AttackHitCheck()
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
 
 	// 공격 범위
-	const float AttackRange = 210.0f;
+	//const float AttackRange = 210.0f;
+	const float AttackRange = Stat->GetTotalStat().AttackRange;
 
 	// 트레이스에 사용할 구체의 반지름
 	const float AttackRadius = 30.0f;
@@ -386,7 +392,8 @@ void AABCharacterBase::AttackHitCheck()
 	if (HitDetected)
 	{
 		// 전달할 데미지
-		const float AttackDamage = 100.0f;
+		//const float AttackDamage = 100.0f;
+		const float AttackDamage = Stat->GetTotalStat().Attack;
 
 		// 데미지 이벤트 변수
 		FDamageEvent DamageEvent;
@@ -409,4 +416,14 @@ void AABCharacterBase::AttackHitCheck()
 	// 캡슐그리기
 	DrawDebugCapsule(GetWorld(), CapsulOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
 #endif
+}
+
+int32 AABCharacterBase::GetLevel() const
+{
+	return Stat->GetCurrentLevel();
+}
+
+void AABCharacterBase::SetLevel(int32 InNewLevel)
+{
+	Stat->SetLevelStat(InNewLevel);
 }
