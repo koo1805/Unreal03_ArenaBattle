@@ -9,10 +9,13 @@ UABCharacterStatComponent::UABCharacterStatComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = false;
+	//PrimaryComponentTick.bCanEverTick = false;
 
 	//MaxHp = 200.0f;
 	//SetHp(MaxHp);
+
+	// bWantsInitializeComponent 값을 true로 설정해야 InitializeComponent 함수가 호출됨
+	bWantsInitializeComponent = true;
 
 	// 현재 레벨 설정
 	CurrentLevel = 1;
@@ -21,8 +24,16 @@ UABCharacterStatComponent::UABCharacterStatComponent()
 	AttackRadius = 50.0f;
 }
 
+void UABCharacterStatComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
 
-// Called when the game starts
+	SetLevelStat(CurrentLevel);
+	SetHp(BaseStat.MaxHp);
+}
+
+
+/*// Called when the game starts
 void UABCharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -30,7 +41,7 @@ void UABCharacterStatComponent::BeginPlay()
 	//SetHp(MaxHp);
 	SetLevelStat(CurrentLevel);
 	SetHp(BaseStat.MaxHp);	
-}
+}	*/
 
 void UABCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 {
@@ -38,7 +49,8 @@ void UABCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 	CurrentLevel = FMath::Clamp(InNewLevel, 1, UABGameSingleton::Get().CharacterMaxLevel);
 
 	// 게임 싱글톤에 접근해서 레벨에 해당하는 스탯 데이터 설정
-	BaseStat = UABGameSingleton::Get().GetCCharacterStat(CurrentLevel);
+	//BaseStat = UABGameSingleton::Get().GetCCharacterStat(CurrentLevel);
+	SetBaseStat(UABGameSingleton::Get().GetCCharacterStat(CurrentLevel));
 
 	// 값에 문제가 없는지 확인
 	ensureAlways(BaseStat.MaxHp > 0.0f);

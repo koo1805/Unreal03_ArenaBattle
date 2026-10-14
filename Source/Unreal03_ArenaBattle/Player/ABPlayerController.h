@@ -6,6 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "ABPlayerController.generated.h"
 
+// 전방선언
+class UABHUDWidget;
+
 /**
  * 
  */
@@ -14,6 +17,18 @@ class UNREAL03_ARENABATTLE_API AABPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+	AABPlayerController();
+
 private:
 	virtual void BeginPlay() override;
+
+protected:
+	// 위젯 클래스 정보
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
+	TSubclassOf<UABHUDWidget> ABHUDWidgetClass;
+
+	// 생성한 위젯을 저장할 변수
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD")
+	TObjectPtr<UABHUDWidget> ABHUDWidget;
 };
