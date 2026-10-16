@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include <Interface/ABGameInterface.h>
 #include "GameFramework/GameModeBase.h"
 #include "ABGameMode.generated.h"
 
@@ -10,11 +11,29 @@
  * 
  */
 UCLASS()
-class UNREAL03_ARENABATTLE_API AABGameMode : public AGameModeBase
+class UNREAL03_ARENABATTLE_API AABGameMode : public AGameModeBase, public IABGameInterface
 {
 	GENERATED_BODY()
 	
 public:
 	// 생성자
 	AABGameMode();
+
+	// Inherited via IABGameInterface
+	virtual void OnPlayerScoreChanged(int32 NewPlayerScore) override;
+	virtual void OnPlayerDead() override;
+	virtual bool IsGameCleared() override;
+	virtual int32 GetClearScore() override;
+
+	// 게임을 클리어하기 위한 조건 (점수)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game")
+	int32 ClearScore;
+
+	// 현재 게임에서 획득한 점수
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Game")
+	int32 CurrentScore;
+
+	// 게임 클리어 여부
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Game")
+	uint8 bIsCleared : 1;
 };
